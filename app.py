@@ -235,7 +235,7 @@ def procesar_pago():
 
     # Mensaje WhatsApp
     mensaje = f"""
-Hola {nombre} 
+Hola {nombre} 👋
 
 Gracias por tu compra en Mi Gas 🔥
 

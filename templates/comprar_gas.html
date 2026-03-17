@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Comprar Gas - RapiGas</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+
+        .contenedor {
+            background: white;
+            width: 400px;
+            margin: auto;
+            padding: 20px;
+            margin-top: 50px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px gray;
+        }
+
+        input, select {
+            width: 90%;
+            padding: 10px;
+            margin: 10px;
+        }
+
+        button {
+            background-color: #ff6a00;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 95%;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #e65c00;
+        }
+
+        .btn-maps {
+            background-color: #4285F4;
+            margin-top: 5px;
+        }
+
+        .btn-maps:hover {
+            background-color: #357ae8;
+        }
+    </style>
+
+</head>
+<body>
+
+<div class="contenedor">
+
+<h2>Comprar Gas</h2>
+
+<form method="POST">
+
+Tipo de gas:
+Tipo de gas:
+
+<select name="id_cilindro" required>
+
+<option value="">Seleccione</option>
+
+{% for c in cilindros %}
+<option value="{{ c.id_cilindro }}">
+{{ c.tipo }} - {{ c.peso }} lb - Q{{ c.precio }}
+</option>
+{% endfor %}
+
+</select>
+
+Cantidad de cilindros:
+<input type="number" name="cantidad" required>
+
+Dirección de entrega:
+<input type="text" id="direccion" name="direccion" required>
+
+<button type="button" class="btn-maps" onclick="obtenerUbicacion()">
+📍 Usar mi ubicación actual
+</button>
+Referencia del lugar:
+<input type="text" name="referencia" placeholder="Ej: Casa azul frente a la tienda">
+<button type="submit">Realizar Pedido</button>
+
+</form>
+
+<br>
+
+<a href="/index">⬅ Volver al inicio</a>
+
+</div>
+
+<script>
+function obtenerUbicacion() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            var lat = position.coords.latitude;
+            var lon = position.coords.longitude;
+
+            document.getElementById("direccion").value =
+                "https://www.google.com/maps?q=" + lat + "," + lon;
+        });
+    } else {
+        alert("Tu navegador no soporta geolocalización");
+    }
+}
+</script>
+
+</body>
+</html>

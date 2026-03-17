@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Confirmar Pedido</title>
+
+<style>
+
+body{
+font-family: Arial;
+background-color:#f4f4f4;
+text-align:center;
+}
+
+.contenedor{
+background:white;
+width:400px;
+margin:auto;
+padding:20px;
+margin-top:50px;
+border-radius:10px;
+box-shadow:0px 0px 10px gray;
+}
+
+button{
+background:#ff6a00;
+color:white;
+padding:10px;
+width:100%;
+border:none;
+margin-top:10px;
+cursor:pointer;
+}
+
+input, select{
+width:95%;
+padding:10px;
+margin-top:5px;
+}
+
+#datos_tarjeta{
+display:none;
+}
+
+</style>
+
+<script>
+
+function mostrarTarjeta(){
+
+    var metodo = document.querySelector('input[name="metodo_pago"]:checked').value;
+
+    if(metodo === "tarjeta"){
+        document.getElementById("datos_tarjeta").style.display = "block";
+    }else{
+        document.getElementById("datos_tarjeta").style.display = "none";
+    }
+
+}
+
+</script>
+
+</head>
+<body>
+
+<div class="contenedor">
+
+<h2>Confirmar Pedido</h2>
+
+<p><b>Tipo de gas:</b> {{ cilindro.tipo }} - {{ cilindro.peso }} lb</p>
+
+<p><b>Precio unitario:</b> Q{{ cilindro.precio }}</p>
+
+<p><b>Cantidad:</b> {{ cantidad }}</p>
+
+<p><b>Dirección:</b> {{ direccion }}</p>
+
+<p><b>Total:</b> Q{{ total }}</p>
+
+<form method="POST" action="/procesar_pago">
+
+<input type="hidden" name="id_cilindro" value="{{ cilindro.id_cilindro }}">
+<input type="hidden" name="cantidad" value="{{ cantidad }}">
+<input type="hidden" name="total" value="{{ total }}">
+<input type="hidden" name="direccion" value="{{ direccion }}">
+
+<h3>Forma de pago</h3>
+
+<input type="radio" name="metodo_pago" value="efectivo" onclick="mostrarTarjeta()" required>
+Efectivo<br><br>
+
+<input type="radio" name="metodo_pago" value="tarjeta" onclick="mostrarTarjeta()">
+Tarjeta<br>
+
+<div id="datos_tarjeta">
+
+<br>
+
+Número de tarjeta:
+<input type="text" name="numero_tarjeta" maxlength="16">
+
+Nombre en tarjeta:
+<input type="text" name="nombre_tarjeta">
+
+Fecha expiración:
+<input type="month" name="fecha_exp">
+
+CVV:
+<input type="text" name="cvv" maxlength="4">
+
+</div>
+
+<button type="submit">Confirmar compra</button>
+
+</form>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inicio - RapiGas</title>
+
+    <style>
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+            color: white;
+            text-align: center;
+        }
+
+        .contenedor {
+            margin-top: 50px;
+        }
+
+        .logo {
+            width: 300px;
+            margin-bottom: 20px;
+        }
+
+        .boton {
+            display: inline-block;
+            margin: 15px;
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #ff6a00;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+        }
+
+        .boton:hover {
+            background-color: #e65c00;
+        }
+
+        .logout {
+            background-color: #c0392b;
+        }
+
+        .logout:hover {
+            background-color: #a93226;
+        }
+
+        
+    </style>
+
+</head>
+<body>
+
+<div class="contenedor">
+
+    <img src="{{ url_for('static', filename='logo.jpeg') }}" class="logo">
+
+    <h1>Bienvenido {{ usuario }}</h1>
+
+
+    <a href="/comprar_gas" class="boton">Comprar Gas</a>
+
+    <a href="/comprar_cilindro.html" class="boton">Comprar Cilindro</a>
+
+    <a href="/estado_pedido.html" class="boton">Consultar Pedido</a>
+
+    <br><br>
+
+    <a href="/logout" class="boton logout">Cerrar sesión</a>
+
+</div>
+
+</body>
+</html>

@@ -86,6 +86,22 @@ Dirección de entrega:
 </button>
 Referencia del lugar:
 <input type="text" name="referencia" placeholder="Ej: Casa azul frente a la tienda">
+<label>
+<input type="checkbox" id="programar" onclick="toggleFechaHora()">
+Programar entrega
+</label>
+
+<div id="programacion" style="display:none;">
+
+<br>
+
+Fecha de entrega:
+<input type="date" name="fecha_entrega">
+
+Hora de entrega:
+<input type="time" name="hora_entrega">
+
+</div>
 <button type="submit">Realizar Pedido</button>
 
 </form>
@@ -110,6 +126,18 @@ function obtenerUbicacion() {
         alert("Tu navegador no soporta geolocalización");
     }
 }
+function toggleFechaHora() {
+
+    var check = document.getElementById("programar");
+
+    if (check.checked) {
+        document.getElementById("programacion").style.display = "block";
+    } else {
+        document.getElementById("programacion").style.display = "none";
+    }
+
+}
+
 </script>
 
 </body>

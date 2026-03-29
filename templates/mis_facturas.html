@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mis Facturas</title>
+
+<style>
+body{
+    font-family: Arial;
+    background:#f4f4f4;
+    padding:20px;
+    text-align:center;
+}
+
+table{
+    width:100%;
+    background:white;
+    border-collapse:collapse;
+    margin-top:20px;
+}
+
+th, td{
+    padding:12px;
+}
+
+thead{
+    background:#111827;
+    color:white;
+}
+
+.btn{
+    background:#2563eb;
+    color:white;
+    padding:6px 12px;
+    border-radius:6px;
+    text-decoration:none;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>Mis Facturas</h2>
+
+<a href="/index" class="btn">Volver</a>
+
+<table>
+
+<thead>
+<tr>
+    <th>Pedido</th>
+    <th>Total</th>
+    <th>Fecha</th>
+    <th>Descargar</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for f in facturas %}
+<tr>
+    <td>{{ f.id_ventas }}</td>
+    <td>Q{{ f.total }}</td>
+    <td>{{ f.fecha_entrega }}</td>
+    <td>
+<a href="{{ url_for('descargar_factura', id=f.id_ventas) }}" class="boton">
+    Descargar PDF
+</a>
+    </td>
+</tr>
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</body>
+</html>

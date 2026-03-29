@@ -1,23 +1,139 @@
-<form method="POST">
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Registro - RapiGas</title>
 
-Nombre:<br>
-<input type="text" name="nombre" required><br><br>
+<style>
 
-Teléfono:<br>
-<input type="text" name="telefono" required><br><br>
+body{
+    margin:0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+}
 
-Dirección:<br>
-<input type="text" name="direccion" required><br><br>
+/* CONTENEDOR */
+.registro-box{
+    background:#1e2a38;
+    padding:35px;
+    border-radius:15px;
+    width:380px;
+    box-shadow:0px 10px 25px rgba(0,0,0,0.5);
+    color:white;
+    text-align:center;
+}
 
-Correo:<br>
-<input type="email" name="correo" required><br><br>
+/* LOGO */
+.logo{
+    width:120px;
+    margin-bottom:10px;
+}
 
-Contraseña:<br>
-<input type="password" name="password" required><br><br>
+/* TÍTULO */
+.registro-box h2{
+    margin-bottom:15px;
+}
 
-Fecha registro:<br>
-<input type="date" name="fecha_registro" required><br><br>
+/* INPUTS */
+input{
+    width:100%;
+    padding:12px;
+    margin:8px 0;
+    border:none;
+    border-radius:8px;
+    outline:none;
+}
 
-<input type="submit" value="Registrarse">
+/* BOTÓN */
+button{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    background:#ff6a00;
+    border:none;
+    border-radius:8px;
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+    transition:0.3s;
+}
 
-</form>
+button:hover{
+    background:#e65c00;
+}
+
+/* LINK */
+a{
+    color:#38bdf8;
+    text-decoration:none;
+}
+
+a:hover{
+    text-decoration:underline;
+}
+
+/* MENSAJE ERROR */
+.error{
+    background:#dc2626;
+    padding:8px;
+    border-radius:8px;
+    margin-bottom:10px;
+}
+
+/* MENSAJE OK */
+.ok{
+    background:#16a34a;
+    padding:8px;
+    border-radius:8px;
+    margin-bottom:10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="registro-box">
+
+    <!-- LOGO -->
+    <img src="{{ url_for('static', filename='45.png') }}" class="logo">
+
+    <h2>Crear Cuenta</h2>
+
+    <!-- MENSAJES -->
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+
+    {% if success %}
+        <div class="ok">{{ success }}</div>
+    {% endif %}
+
+    <!-- FORMULARIO -->
+    <form method="POST">
+
+        <input type="text" name="nombre" placeholder="Nombre completo" required>
+
+        <input type="text" name="telefono" placeholder="Teléfono" required>
+
+        <input type="text" name="direccion" placeholder="Dirección" required>
+
+        <input type="email" name="correo" placeholder="Correo electrónico" required>
+
+        <input type="password" name="password" placeholder="Contraseña" required>
+
+        <input type="date" name="fecha_registro" required>
+
+        <button type="submit">Registrarse</button>
+
+    </form>
+
+    <br>
+</div>
+
+</body>
+</html>

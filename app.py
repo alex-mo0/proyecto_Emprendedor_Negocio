@@ -1,16 +1,21 @@
+from asyncio import events
+
 from flask import Flask, render_template, request, redirect, url_for, session, send_file
 import mysql.connector
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
-from urllib.parse import quote
+from datetime import datetime
 import os
+import random   
+import smtplib
+
 
 app = Flask(__name__)
 app.secret_key = "alexmo_secret"
 
 # ==========================
-# CONEXIÓN BASE DE DATOS
+# CONEXIÓN BD
 # ==========================
 def get_db_connection():
     return mysql.connector.connect(
@@ -23,64 +28,131 @@ def get_db_connection():
 # ==========================
 # GENERAR FACTURA PDF
 # ==========================
-def generar_factura_pdf(nombre, telefono, producto, cantidad, total):
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
+from datetime import datetime
+import os
+import random
+
+def generar_factura_pdf(nombre, telefono, producto, cantidad, total, direccion):
 
     if not os.path.exists("facturas"):
         os.makedirs("facturas")
 
-    pdf_path = f"facturas/factura_{telefono}.pdf"
+    numero_factura = random.randint(10000, 99999)
+    fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
+
+    pdf_path = f"facturas/factura_{numero_factura}.pdf"
 
     doc = SimpleDocTemplate(pdf_path)
     elements = []
     styles = getSampleStyleSheet()
 
-    elements.append(Paragraph("FACTURA - MI GAS", styles["Title"]))
-    elements.append(Spacer(1, 0.3 * inch))
+    # 🔥 LOGO (opcional)
+    if os.path.exists("static/45.png"):
+        logo = Image("static/45.png", width=120, height=90 )
+        logo.hAlign = 'LEFT'
+        elements.append(logo)
+    # 🧾 TÍTULO
+    elements.append(Paragraph("<b>FACTURA</b>", styles["Title"]))
 
-    elements.append(Paragraph(f"Cliente: {nombre}", styles["Normal"]))
-    elements.append(Paragraph(f"Teléfono: {telefono}", styles["Normal"]))
+    # 📌 INFO EMPRESA
+    elements.append(Paragraph("RapiGas", styles["Normal"]))
+    elements.append(Paragraph("Tel: 1234-5678", styles["Normal"]))
+    elements.append(Paragraph("Dirección: Mixqueño", styles["Normal"]))
+
     elements.append(Spacer(1, 0.2 * inch))
 
-    elements.append(Paragraph(f"Producto: {producto}", styles["Normal"]))
-    elements.append(Paragraph(f"Cantidad: {cantidad}", styles["Normal"]))
-    elements.append(Paragraph(f"Total: Q{total}", styles["Normal"]))
+    # 🔢 INFO FACTURA
+    elements.append(Paragraph(f"No. Factura: {numero_factura}", styles["Normal"]))
+    elements.append(Paragraph(f"Fecha: {fecha}", styles["Normal"]))
 
     elements.append(Spacer(1, 0.3 * inch))
-    elements.append(Paragraph("Gracias por confiar en Mi Gas 🔥", styles["Normal"]))
+
+    # 👤 CLIENTE
+    elements.append(Paragraph("<b>Datos del Cliente</b>", styles["Heading3"]))
+    elements.append(Paragraph(f"Nombre: {nombre}", styles["Normal"]))
+    elements.append(Paragraph(f"Teléfono: {telefono}", styles["Normal"]))
+    elements.append(Paragraph(f"Dirección: {direccion}", styles["Normal"]))
+
+    elements.append(Spacer(1, 0.3 * inch))
+
+    # 📦 TABLA DE PRODUCTOS
+    data = [
+        ["Producto", "Cantidad", "Precio Unitario", "Total"],
+        [producto, str(cantidad), f"Q{round(total/cantidad,2)}", f"Q{total}"]
+    ]
+
+    table = Table(data, colWidths=[2.5*inch, 1*inch, 1.5*inch, 1.5*inch])
+
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.grey),
+        ('TEXTCOLOR',(0,0),(-1,0),colors.white),
+        ('ALIGN',(1,1),(-1,-1),'CENTER'),
+        ('GRID', (0,0), (-1,-1), 1, colors.black),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+    ]))
+
+    elements.append(table)
+
+    elements.append(Spacer(1, 0.3 * inch))
+
+    # 💰 TOTAL GRANDE
+    elements.append(Paragraph(f"<b>Total a pagar: Q{total}</b>", styles["Heading2"]))
+
+    elements.append(Spacer(1, 0.5 * inch))
+
+    # 🙌 MENSAJE FINAL
+    elements.append(Paragraph("Gracias por su compra ", styles["Normal"]))
 
     doc.build(elements)
 
     return pdf_path
 
 # ==========================
-# LOGIN
+# LOGIN (USUARIO + ADMIN)
 # ==========================
 @app.route('/', methods=['GET', 'POST'])
 def login():
+
     if request.method == 'POST':
 
         correo = request.form['correo']
         password = request.form['password']
 
         conn = get_db_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
-        cursor.execute(
-            "SELECT * FROM usuarios WHERE correo = %s AND password = %s",
-            (correo, password)
-        )
-
+        # USUARIO
+        cursor.execute("SELECT * FROM usuarios WHERE correo=%s AND password=%s", (correo, password))
         user = cursor.fetchone()
+
+        if user:
+            session['usuario'] = user['nombre']
+            session['id_usuario'] = user['id_usuario']
+            session['rol'] = 'usuario'
+            cursor.close()
+            conn.close()
+            return redirect(url_for('index'))
+
+        # ADMIN
+        cursor.execute("SELECT * FROM administradores WHERE correo=%s AND password=%s", (correo, password))
+        admin = cursor.fetchone()
+
+        if admin:
+            session['usuario'] = admin['nombre']
+            session['id_admin'] = admin['id_admin']
+            session['rol'] = 'admin'
+            cursor.close()
+            conn.close()
+            return redirect(url_for('admin'))
 
         cursor.close()
         conn.close()
 
-        if user:
-            session['usuario'] = user[1]
-            session['id_usuario'] = user[0]
-            return redirect(url_for('index'))
-        else:
-            return "❌ Credenciales inválidas"
+        return "❌ Credenciales incorrectas"
 
     return render_template('login.html')
 
@@ -89,6 +161,7 @@ def login():
 # ==========================
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
+
     if request.method == 'POST':
 
         nombre = request.form['nombre']
@@ -102,16 +175,16 @@ def registro():
         cursor = conn.cursor()
 
         cursor.execute("""
-            INSERT INTO usuarios 
+            INSERT INTO usuarios
             (nombre, telefono, direccion, correo, password, fecha_registro)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            VALUES (%s,%s,%s,%s,%s,%s)
         """, (nombre, telefono, direccion, correo, password, fecha_registro))
 
         conn.commit()
         cursor.close()
         conn.close()
 
-        return "✅ Usuario registrado exitosamente"
+        return "✅ Usuario registrado"
 
     return render_template('registro.html')
 
@@ -120,9 +193,9 @@ def registro():
 # ==========================
 @app.route('/index')
 def index():
-    if 'usuario' in session:
-        return render_template('index.html', usuario=session['usuario'])
-    return redirect(url_for('login'))
+    if session.get('rol') != 'usuario':
+        return redirect(url_for('login'))
+    return render_template('index.html', usuario=session['usuario'])
 
 # ==========================
 # LOGOUT
@@ -152,8 +225,10 @@ def comprar_gas():
         id_cilindro = request.form['id_cilindro']
         cantidad = int(request.form['cantidad'])
         direccion = request.form['direccion']
+        fecha_entrega = request.form.get('fecha_entrega')
+        hora_entrega = request.form.get('hora_entrega')
 
-        cursor.execute("SELECT * FROM cilindros WHERE id_cilindro = %s", (id_cilindro,))
+        cursor.execute("SELECT * FROM cilindros WHERE id_cilindro=%s", (id_cilindro,))
         cilindro = cursor.fetchone()
 
         total = cilindro['precio'] * cantidad
@@ -161,25 +236,19 @@ def comprar_gas():
         cursor.close()
         conn.close()
 
-        return render_template(
-            'confirmar_pago.html',
+        return render_template('confirmar_pago.html',
             cilindro=cilindro,
             cantidad=cantidad,
             direccion=direccion,
-            total=total
+            total=total,
+            fecha_entrega=fecha_entrega,
+            hora_entrega=hora_entrega
         )
 
     cursor.close()
     conn.close()
 
     return render_template('comprar_gas.html', cilindros=cilindros)
-
-# ==========================
-# SERVIR FACTURA
-# ==========================
-@app.route('/facturas/<filename>')
-def servir_factura(filename):
-    return send_file(f"facturas/{filename}", as_attachment=False)
 
 # ==========================
 # PROCESAR PAGO
@@ -194,65 +263,416 @@ def procesar_pago():
     id_cilindro = request.form['id_cilindro']
     cantidad = int(request.form['cantidad'])
     total = float(request.form['total'])
+    direccion = request.form['direccion']
+    metodo_pago = request.form['metodo_pago']
+
+    fecha_entrega = request.form.get('fecha_entrega')
+    hora_entrega = request.form.get('hora_entrega')
+
+    if not fecha_entrega or not hora_entrega:
+        ahora = datetime.now()
+        fecha_entrega = ahora.strftime("%Y-%m-%d")
+        hora_entrega = ahora.strftime("%H:%M:%S")
+
+    estado = "Pagado" if metodo_pago == "tarjeta" else "Pendiente"
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Guardar venta
     cursor.execute("""
-        INSERT INTO ventas_gas
-        (id_usuario, id_cilindro, cantidad, total, fecha, estado)
-        VALUES (%s, %s, %s, %s, NOW(), 'Pendiente')
-    """, (id_usuario, id_cilindro, cantidad, total))
+        INSERT INTO ventas_gas_nueva
+        (id_usuario,id_cilindro,cantidad,total,direccion,estado,fecha_entrega,hora_entrega)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+    """, (id_usuario, id_cilindro, cantidad, total, direccion, estado, fecha_entrega, hora_entrega))
 
-    # Actualizar stock
-    cursor.execute("""
-        UPDATE cilindros
-        SET stock = stock - %s
-        WHERE id_cilindro = %s
-    """, (cantidad, id_cilindro))
+    cursor.execute("UPDATE cilindros SET stock = stock - %s WHERE id_cilindro = %s",
+                   (cantidad, id_cilindro))
 
     conn.commit()
-
-    # Obtener datos usuario
-    cursor.execute("SELECT nombre, telefono FROM usuarios WHERE id_usuario = %s", (id_usuario,))
-    usuario = cursor.fetchone()
-
-    nombre = usuario['nombre']
-    telefono = usuario['telefono']
-
-    # Obtener nombre producto
-    cursor.execute("SELECT tipo,peso FROM cilindros WHERE id_cilindro = %s", (id_cilindro,))
-    cilindro = cursor.fetchone()
-    producto = f"{cilindro['tipo']} - {cilindro['peso']} lb"
 
     cursor.close()
     conn.close()
 
-    # Generar factura
-    pdf_path = generar_factura_pdf(nombre, telefono, producto, cantidad, total)
-    nombre_archivo = os.path.basename(pdf_path)
-
-    # Mensaje WhatsApp
-    mensaje = f"""
-Hola {nombre} 👋
-
-Gracias por tu compra en Mi Gas 🔥
-
-Producto: {producto}
-Cantidad: {cantidad}
-Total: Q{total}
-
-Aquí está tu factura:
-http://localhost:5000/facturas/{nombre_archivo}
-"""
-
-    mensaje_codificado = quote(mensaje)
-
-    return redirect(f"https://wa.me/502{telefono}?text={mensaje_codificado}")
+    return render_template('mensaje.html', mensaje="✅ Pedido realizado")
 
 # ==========================
-# EJECUTAR
+# MIS PEDIDOS
+# ==========================
+@app.route('/mis_pedidos')
+def mis_pedidos():
+
+    if 'id_usuario' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT v.*, c.tipo, c.peso
+        FROM ventas_gas_nueva v
+        JOIN cilindros c ON v.id_cilindro = c.id_cilindro
+        WHERE v.id_usuario = %s
+    """, (session['id_usuario'],))
+
+    pedidos = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('mis_pedidos.html', pedidos=pedidos)
+
+# ==========================
+# ADMIN DASHBOARD
+# ==========================
+@app.route('/admin')
+def admin():
+
+    if session.get('rol') != 'admin':
+        return "❌ Acceso no autorizado"
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # TOTAL PEDIDOS
+    cursor.execute("SELECT COUNT(*) as total FROM ventas_gas_nueva")
+    total_pedidos = cursor.fetchone()['total']
+
+    # TOTAL VENTAS
+    cursor.execute("SELECT SUM(total) as total FROM ventas_gas_nueva")
+    total_ventas = cursor.fetchone()['total'] or 0
+
+    # TOTAL USUARIOS
+    cursor.execute("SELECT COUNT(*) as total FROM usuarios")
+    total_usuarios = cursor.fetchone()['total']
+
+    # PEDIDOS RECIENTES ✅
+    cursor.execute("""
+        SELECT v.id_ventas, u.nombre, v.total, v.estado
+        FROM ventas_gas_nueva v
+        JOIN usuarios u ON v.id_usuario = u.id_usuario
+        ORDER BY v.id_ventas DESC
+        LIMIT 5
+    """)
+    pedidos = cursor.fetchall()
+
+    # VENTAS PARA GRAFICA ✅ (ESTO TE FALTABA)
+    cursor.execute("""
+        SELECT DATE(fecha) as dia, SUM(total) as total
+        FROM ventas_gas_nueva
+        GROUP BY DATE(fecha)
+        ORDER BY dia ASC
+    """)
+    ventas = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('admin.html',
+        total_pedidos=total_pedidos,
+        total_ventas=total_ventas,
+        total_usuarios=total_usuarios,
+        pedidos=pedidos,
+        ventas=ventas,  # 🔥 YA EXISTE
+        admin_nombre=session['usuario']
+    )
+# ==========================
+# ADMIN PEDIDOS
+# ==========================
+@app.route('/admin_pedidos')
+def admin_pedidos():
+
+    if session.get('rol') != 'admin':
+        return "❌ No autorizado"
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # 📦 PEDIDOS
+    cursor.execute("""
+        SELECT 
+            v.id_ventas,
+            u.nombre,
+            c.tipo,
+            c.peso,
+            v.total,
+            v.estado,
+            v.estado_ruta,
+            v.id_repartidor,
+            DATE_FORMAT(v.fecha_entrega, '%d/%m/%Y') as fecha_entrega,
+            v.direccion,
+            r.nombre AS repartidor_nombre
+        FROM ventas_gas_nueva v
+        JOIN usuarios u ON v.id_usuario = u.id_usuario
+        JOIN cilindros c ON v.id_cilindro = c.id_cilindro
+        LEFT JOIN repartidores r ON v.id_repartidor = r.id_repartidor
+        WHERE v.estado_ruta != 'entregado' OR v.estado_ruta IS NULL
+        ORDER BY v.id_ventas DESC
+    """)
+    pedidos = cursor.fetchall()
+
+    # 👷 REPARTIDORES (FALTABA ESTO 🔥)
+    cursor.execute("SELECT * FROM repartidores")
+    repartidores = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        'admin_pedidos.html',
+        pedidos=pedidos,
+        repartidores=repartidores   # 👈 CLAVE
+    )
+# ==========================
+# ADMIN INVENTARIO
+# ==========================
+@app.route('/admin_inventario')
+def admin_inventario():
+
+    if session.get('rol') != 'admin':
+        return "❌ No autorizado"
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM cilindros")
+    productos = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('admin_inventario.html', productos=productos)
+
+# ==========================
+# ADMIN USUARIOS
+# ==========================
+@app.route('/admin_usuarios')
+def admin_usuarios():
+
+    if session.get('rol') != 'admin':
+        return "❌ No autorizado"
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM usuarios")
+    usuarios = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('admin_usuarios.html', usuarios=usuarios)
+#despacho
+@app.route('/admin_historial')
+def admin_historial():
+
+    if session.get('rol') != 'admin':
+        return "❌ No autorizado"
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT 
+            v.id_ventas,
+            u.nombre,
+            v.total,
+            v.factura_enviada,
+            DATE_FORMAT(v.fecha_entrega,'%d/%m/%Y') as fecha_entrega,
+            r.nombre AS repartidor_nombre
+        FROM ventas_gas_nueva v
+        JOIN usuarios u ON v.id_usuario = u.id_usuario
+        LEFT JOIN repartidores r ON v.id_repartidor = r.id_repartidor
+        WHERE v.estado_ruta = 'entregado'
+        ORDER BY v.id_ventas DESC
+    """)
+
+    pedidos = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template("admin_historial.html",
+        pedidos=pedidos,
+        admin_nombre=session.get('usuario')
+    )
+#asignar repartidor
+@app.route('/asignar_repartidor', methods=['POST'])
+def asignar_repartidor():
+
+    id_venta = request.form['id_venta']
+    id_repartidor = request.form['repartidor']
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE ventas_gas_nueva
+        SET id_repartidor = %s,
+            estado_ruta = 'en_despacho'
+        WHERE id_ventas = %s
+    """, (id_repartidor, id_venta))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect('/admin_pedidos')
+
+#estado de ruta 
+@app.route('/estado/<int:id>/<estado>')
+def cambiar_estado(id, estado):
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE ventas_gas_nueva
+        SET estado = %s
+        WHERE id_ventas = %s
+    """, (estado, id))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return redirect('/admin_despacho')
+#finalizar ruta
+@app.route('/finalizar/<int:id>')
+def finalizar_pedido(id):
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE ventas_gas_nueva
+        SET estado_ruta = 'entregado'
+        WHERE id_ventas = %s
+    """, (id,))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect('/admin_pedidos')
+
+#historial de ventas
+@app.route('/historial')
+def historial():
+
+    if session.get('rol') != 'admin':
+        return "❌ No autorizado"
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT 
+            v.id_ventas,
+            u.nombre,
+            c.tipo,
+            c.peso,
+            v.total,
+            DATE_FORMAT(v.fecha_entrega, '%d/%m/%Y') as fecha_entrega,
+            r.nombre AS repartidor_nombre
+        FROM ventas_gas_nueva v
+        JOIN usuarios u ON v.id_usuario = u.id_usuario
+        JOIN cilindros c ON v.id_cilindro = c.id_cilindro
+        LEFT JOIN repartidores r ON v.id_repartidor = r.id_repartidor
+        WHERE v.estado_ruta = 'entregado'
+        ORDER BY v.id_ventas DESC
+    """)
+
+    pedidos = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('historial.html', pedidos=pedidos)
+
+#enviar factura
+@app.route('/enviar_factura/<int:id>')
+def enviar_factura(id):
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE ventas_gas_nueva
+        SET factura_enviada = 1
+        WHERE id_ventas = %s
+    """, (id,))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect('/admin_historial')
+#mis facturas
+@app.route('/mis_facturas')
+def mis_facturas():
+
+    if session.get('rol') != 'usuario':   # 🔥 MEJOR VALIDACIÓN
+        return redirect('/login')
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT 
+            id_ventas,
+            total,
+            fecha_entrega
+        FROM ventas_gas_nueva
+        WHERE id_usuario = %s
+        AND estado_ruta = 'entregado'
+        AND factura_enviada = 1
+    """, (session['id_usuario'],))
+
+    facturas = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template("mis_facturas.html", facturas=facturas)
+#descargar factura
+@app.route('/descargar_factura/<int:id>')
+def descargar_factura(id):
+
+    if session.get('rol') != 'usuario':
+        return redirect('/login')
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT v.*, u.nombre, u.telefono, c.tipo
+        FROM ventas_gas_nueva v
+        JOIN usuarios u ON v.id_usuario = u.id_usuario
+        JOIN cilindros c ON v.id_cilindro = c.id_cilindro
+        WHERE v.id_ventas = %s
+    """, (id,))
+
+    venta = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    # 🔥 generar PDF
+    pdf_path = generar_factura_pdf(
+        venta['nombre'],
+        venta['telefono'],
+        venta['tipo'],
+        venta['cantidad'],
+        venta['total'],
+        venta['direccion']
+    )
+
+    return send_file(pdf_path, as_attachment=True)
+# ==========================
+# RUN
 # ==========================
 if __name__ == '__main__':
     app.run(debug=True)

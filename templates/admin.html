@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>RapiGas Admin PRO</title>
+
+<style>
+body{
+    margin:0;
+    font-family:'Segoe UI';
+    background:#f4f6f9;
+    display:flex;
+}
+
+/* SIDEBAR */
+.sidebar{
+    width:250px;
+    background:#111827;
+    color:white;
+    height:100vh;
+    padding:20px;
+}
+
+.sidebar a{
+    display:block;
+    padding:12px;
+    margin:10px 0;
+    color:white;
+    text-decoration:none;
+    border-radius:8px;
+}
+
+.sidebar a:hover{
+    background:#2563eb;
+}
+
+/* MAIN */
+.main{
+    flex:1;
+}
+
+/* CARDS */
+.cards{
+    display:flex;
+    gap:20px;
+    padding:20px;
+}
+
+.card{
+    flex:1;
+    background:white;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* GRID */
+.grid{
+    display:flex;
+    gap:20px;
+    padding:20px;
+}
+
+/* TABLE */
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th, td{
+    padding:10px;
+    text-align:center;
+}
+
+th{
+    background:#2563eb;
+    color:white;
+}
+
+/* MAP */
+.map{
+    height:250px;
+    background:#d1d5db;
+    border-radius:10px;
+}
+</style>
+
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+
+<div class="sidebar">
+
+<div style="text-align:center;">
+    <img src="{{ url_for('static', filename='45.png') }}" 
+         style="width:80px; border-radius:50%; margin-bottom:10px;">
+    <p style="font-size:14px; color:#ccc;">
+        {{ admin_nombre }}
+    </p>
+</div>
+
+<hr style="border:1px solid #333;">
+<a href="/admin_pedidos">Pedidos</a>
+<a href="/admin_inventario">Inventario</a>
+<a href="/admin_usuarios">Usuarios</a>
+<a href="/admin_historial">Historial</a>
+<a href="/logout"> Salir</a>
+
+
+</div>
+
+<!-- MAIN -->
+
+<div class="main">
+
+<!-- CARDS -->
+
+<div class="cards">
+    <div class="card">
+        <h4>Pedidos</h4>
+        <h2>{{ total_pedidos }}</h2>
+    </div>
+
+<div class="card">
+    <h4>Ventas</h4>
+    <h2>Q{{ total_ventas }}</h2>
+</div>
+
+<div class="card">
+    <h4>Clientes</h4>
+    <h2>{{ total_usuarios }}</h2>
+</div>
+
+</div>
+
+<!-- GRID PRINCIPAL -->
+
+<div class="grid">
+
+<!-- TABLA -->
+<div class="card" style="flex:2;">
+    <h3>Pedidos recientes</h3>
+
+    <table>
+        <tr>
+            <th>Pedido</th>
+            <th>Cliente</th>
+            <th>Total</th>
+            <th>Estado</th>
+        </tr>
+
+        {% for p in pedidos %}
+        <tr>
+            <td>{{ p.id_ventas }}</td>
+            <td>{{ p.nombre }}</td>
+            <td>Q{{ p.total }}</td>
+            <td>
+    {% set estado = p.estado | lower %}
+
+    {% if estado == 'pendiente' %}
+        <span class="pendiente">⏳ Pendiente</span>
+
+    {% elif estado == 'pagado' %}
+        <span class="pagado">✅ Pagado</span>
+
+    {% else %}
+        <span class="rechazado">❌ {{ p.estado }}</span>
+    {% endif %}
+</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<!-- GRAFICA -->
+<div class="card">
+    <h3>Ventas por día</h3>
+    <canvas id="graficaVentas"></canvas>
+</div>
+```
+
+</div>
+
+<!-- MAPA -->
+
+<div class="grid">
+    <div class="card" style="width:100%;">
+        <h3>Mapa de entregas</h3>
+        <div class="map"></div>
+    </div>
+</div>
+
+</div>
+
+<!-- SCRIPT SIEMPRE AL FINAL -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const ventasData = JSON.parse('{{ ventas | tojson | safe }}');
+
+const labels = ventasData.map(v => v.dia);
+const data = ventasData.map(v => v.total);
+
+const ctx = document.getElementById('graficaVentas');
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Ventas (Q)',
+            data: data,
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4
+        }]
+    }
+});
+</script>
+
+</body>
+</html>

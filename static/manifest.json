@@ -1,0 +1,21 @@
+{
+  "name": "RapiGas",
+  "short_name": "RapiGas",
+  "description": "Compra y entrega de gas en línea",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1c2835",
+  "theme_color": "#ff6a00",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

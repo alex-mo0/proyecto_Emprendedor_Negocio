@@ -1,0 +1,19 @@
+<h2>📦 Pedidos</h2>
+
+<table>
+<tr>
+    <th>Cliente</th>
+    <th>Producto</th>
+    <th>Total</th>
+    <th>Estado</th>
+</tr>
+
+{% for p in pedidos %}
+<tr>
+    <td>{{ p.nombre }}</td>
+    <td>{{ p.tipo }}</td>
+    <td>Q{{ p.total }}</td>
+    <td>{{ p.estado }}</td>
+</tr>
+{% endfor %}
+</table>

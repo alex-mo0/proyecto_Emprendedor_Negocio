@@ -1,25 +1,124 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Login Gas</title>
+<meta charset="UTF-8">
+<title>Login - RapiGas</title>
+
+<!-- PWA -->
+<link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+<meta name="theme-color" content="#ff6a00">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+    margin:0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to right, #1d3c49, #203a43, #2c5364);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+/* CONTENEDOR */
+.login-box{
+    background:#1c2835;
+    padding:40px;
+    border-radius:15px;
+    width:350px;
+    box-shadow:0px 10px 25px rgba(0,0,0,0.5);
+    text-align:center;
+    color:white;
+}
+
+/* TÍTULO */
+.login-box h2{
+    margin-bottom:20px;
+}
+
+/* INPUTS */
+input{
+    width:100%;
+    padding:12px;
+    margin:10px 0;
+    border:none;
+    border-radius:8px;
+    outline:none;
+}
+
+/* BOTÓN */
+button{
+    width:100%;
+    padding:12px;
+    background:#ff6a00;
+    border:none;
+    border-radius:8px;
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+button:hover{
+    background:#e65c00;
+}
+
+/* LINK */
+a{
+    color:#38bdf8;
+    text-decoration:none;
+}
+
+a:hover{
+    text-decoration:underline;
+}
+
+/* LOGO */
+.logo{
+    width:120px;
+    margin-bottom:15px;
+}
+</style>
+
+<!-- Service Worker -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register("{{ url_for('static', filename='sw.js') }}")
+    .then(function(registration) {
+      console.log('ServiceWorker registrado:', registration.scope);
+    }).catch(function(err) {
+      console.log('ServiceWorker fallo:', err);
+    });
+  });
+}
+</script>
+
 </head>
 <body>
 
-<h2>Login Usuario</h2>
+<div class="login-box">
 
-<form method="POST">
+    <img src="{{ url_for('static', filename='45.png') }}" class="logo">
 
-Correo:<br>
-<input type="email" name="correo" required><br><br>
+    <h2>Iniciar Sesión</h2>
 
-Contraseña:<br>
-<input type="password" name="password" required><br><br>
+    <form method="POST">
 
-<input type="submit" value="Iniciar sesión">
+        <input type="email" name="correo" placeholder="Correo electrónico" required>
+        <input type="password" name="password" placeholder="Contraseña" required>
 
-</form>
-<br>
-<a href="/registro">¿No tienes cuenta? Regístrate</a>
+        <button type="submit">Ingresar</button>
+
+    </form>
+
+    <br>
+
+    <p>¿No tienes cuenta? 
+        <a href="/registro">Regístrate</a>
+    </p>
+
+</div>
 
 </body>
 </html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Historial de Pedidos</title>
+
+<style>
+body{
+    font-family: Arial;
+    background:#f4f4f4;
+    padding:20px;
+}
+
+h2{
+    margin-bottom:20px;
+}
+
+.boton{
+    background:#2563eb;
+    color:white;
+    padding:8px 15px;
+    border-radius:6px;
+    text-decoration:none;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+
+thead{
+    background:#111827;
+    color:white;
+}
+
+th, td{
+    padding:12px;
+    text-align:center;
+}
+
+tr{
+    border-bottom:1px solid #eee;
+}
+
+tr:hover{
+    background:#f9fafb;
+}
+
+.btn-factura{
+    background:#2563eb;
+    color:white;
+    padding:6px 10px;
+    border-radius:5px;
+    text-decoration:none;
+}
+
+.estado{
+    background:#22c55e;
+    color:white;
+    padding:5px 10px;
+    border-radius:20px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>📊 Historial de Pedidos</h2>
+
+<a href="/admin" class="boton">
+    ⬅ Volver a Inicio
+</a>
+
+<br><br>
+
+<table>
+
+<thead>
+<tr>
+    <th>Pedido</th>
+    <th>Cliente</th>
+    <th>Total</th>
+    <th>Repartidor</th>
+    <th>Fecha</th>
+    <th>Estado</th>
+    <th>Factura</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for p in pedidos %}
+
+<tr>
+
+
+<!-- ID -->
+<td>{{ p.id_ventas }}</td>
+
+<!-- CLIENTE -->
+<td>{{ p.nombre }}</td>
+
+<!-- TOTAL -->
+<td><strong>Q{{ "%.2f"|format(p.total) }}</strong></td>
+
+<!-- REPARTIDOR -->
+<td>{{ p.repartidor_nombre or 'Sin asignar' }}</td>
+
+<!-- FECHA -->
+<td>{{ p.fecha_entrega or '' }}</td>
+
+<!-- ESTADO -->
+<td>
+    <span class="estado">✅ Entregado</span>
+</td>
+
+<!-- FACTURA -->
+<!-- FACTURA -->
+<td>
+
+{% if p.factura_enviada == 1 %}
+    <span style="
+        background:#22c55e;
+        color:white;
+        padding:6px 10px;
+        border-radius:10px;
+    ">
+        ✅ Enviada
+    </span>
+{% else %}
+    <a href="/enviar_factura/{{ p.id_ventas }}" class="btn-factura">
+        📧 Enviar
+    </a>
+{% endif %}
+
+</td>
+
+</tr>
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</body>
+</html>

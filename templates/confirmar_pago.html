@@ -6,39 +6,39 @@
 <style>
 
 body{
-font-family: Arial;
-background-color:#f4f4f4;
-text-align:center;
+    font-family: Arial;
+    background-color:#f4f4f4;
+    text-align:center;
 }
 
 .contenedor{
-background:white;
-width:400px;
-margin:auto;
-padding:20px;
-margin-top:50px;
-border-radius:10px;
-box-shadow:0px 0px 10px gray;
+    background:white;
+    width:400px;
+    margin:auto;
+    padding:20px;
+    margin-top:50px;
+    border-radius:10px;
+    box-shadow:0px 0px 10px gray;
 }
 
 button{
-background:#ff6a00;
-color:white;
-padding:10px;
-width:100%;
-border:none;
-margin-top:10px;
-cursor:pointer;
+    background:#ff6a00;
+    color:white;
+    padding:10px;
+    width:100%;
+    border:none;
+    margin-top:10px;
+    cursor:pointer;
 }
 
 input, select{
-width:95%;
-padding:10px;
-margin-top:5px;
+    width:95%;
+    padding:10px;
+    margin-top:5px;
 }
 
 #datos_tarjeta{
-display:none;
+    display:none;
 }
 
 </style>
@@ -47,15 +47,15 @@ display:none;
 
 function mostrarTarjeta(){
 
-    var metodo = document.querySelector('input[name="metodo_pago"]:checked').value;
+    var metodo = document.querySelector('input[name="metodo_pago"]:checked');
 
-    if(metodo === "tarjeta"){
+    if(!metodo) return;
+
+    if(metodo.value === "tarjeta"){
         document.getElementById("datos_tarjeta").style.display = "block";
     }else{
         document.getElementById("datos_tarjeta").style.display = "none";
-    }
-
-}
+    }}
 
 </script>
 
@@ -67,14 +67,19 @@ function mostrarTarjeta(){
 <h2>Confirmar Pedido</h2>
 
 <p><b>Tipo de gas:</b> {{ cilindro.tipo }} - {{ cilindro.peso }} lb</p>
-
 <p><b>Precio unitario:</b> Q{{ cilindro.precio }}</p>
-
 <p><b>Cantidad:</b> {{ cantidad }}</p>
-
 <p><b>Dirección:</b> {{ direccion }}</p>
-
 <p><b>Total:</b> Q{{ total }}</p>
+
+<!-- 🆕 Mostrar entrega -->
+<p><b>Entrega:</b>
+{% if fecha_entrega and hora_entrega %}
+    {{ fecha_entrega }} - {{ hora_entrega }}
+{% else %}
+    Hoy (inmediata)
+{% endif %}
+</p>
 
 <form method="POST" action="/procesar_pago">
 
@@ -82,6 +87,10 @@ function mostrarTarjeta(){
 <input type="hidden" name="cantidad" value="{{ cantidad }}">
 <input type="hidden" name="total" value="{{ total }}">
 <input type="hidden" name="direccion" value="{{ direccion }}">
+
+<!-- 🆕 enviar programación -->
+<input type="hidden" name="fecha_entrega" value="{{ fecha_entrega }}">
+<input type="hidden" name="hora_entrega" value="{{ hora_entrega }}">
 
 <h3>Forma de pago</h3>
 
@@ -96,7 +105,7 @@ Tarjeta<br>
 <br>
 
 Número de tarjeta:
-<input type="text" name="numero_tarjeta" maxlength="16">
+<input type="text" name="numero_tarjeta" maxlength="16" pattern="[0-9]{16}" placeholder="16 dígitos">
 
 Nombre en tarjeta:
 <input type="text" name="nombre_tarjeta">
@@ -105,7 +114,7 @@ Fecha expiración:
 <input type="month" name="fecha_exp">
 
 CVV:
-<input type="text" name="cvv" maxlength="4">
+<input type="text" name="cvv" maxlength="4" pattern="[0-9]{3,4}" placeholder="3 o 4 dígitos">
 
 </div>
 

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Panel de Pedidos</title>
+
+<style>
+body{
+    font-family: Arial;
+    background:#f4f4f4;
+    padding:20px;
+}
+
+h2{
+    margin-bottom:15px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+
+thead{
+    background:#2563eb;
+    color:white;
+}
+
+th, td{
+    padding:10px;
+    text-align:center;
+}
+
+tr{
+    border-bottom:1px solid #eee;
+}
+
+button{
+    cursor:pointer;
+}
+
+.btn-ver{
+    background:#111827;
+    color:white;
+    border:none;
+    padding:6px 10px;
+    border-radius:6px;
+}
+
+.btn-confirmar{
+    background:#22c55e;
+    color:white;
+    border:none;
+    padding:6px 10px;
+    border-radius:6px;
+}
+
+.btn-disabled{
+    background:gray;
+    color:white;
+    border:none;
+    padding:6px 10px;
+    border-radius:6px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>🚚 Panel de Pedidos</h2>
+
+<a href="/admin_historial" style="background:#2f384b; color:white; padding:8px 15px; border-radius:6px; text-decoration:none;">
+Ver Historial
+</a>
+<a href="/admin" style="background:#45516d; color:white; padding:8px 15px; border-radius:6px; text-decoration:none;">
+Volver a Inicio
+</a>
+
+<br><br>
+
+<table>
+
+<thead>
+<tr>
+    <th>Cliente</th>
+    <th>Producto</th>
+    <th>Total</th>
+    <th>Pago</th>
+    <th>Entrega</th>
+    <th>Repartidor</th>
+    <th>Fecha</th>
+    <th>Ver</th>
+    <th>Acción</th>
+</tr>
+</thead>
+
+<tbody>
+{% for p in pedidos %}
+<tr>
+
+    <!-- CLIENTE -->
+    <td>{{ p.nombre }}</td>
+
+    <!-- PRODUCTO -->
+    <td>{{ p.tipo }} ({{ p.peso }} lb)</td>
+
+    <!-- TOTAL -->
+    <td><strong>Q{{ "%.2f"|format(p.total) }}</strong></td>
+
+    <!-- PAGO -->
+    <td>
+        {% set pago = (p.estado or 'pendiente') | lower %}
+        {% if pago == 'pendiente' %}
+            <span style="background:#facc15; padding:5px 10px; border-radius:20px;">⏳</span>
+        {% elif pago == 'pagado' %}
+            <span style="background:#22c55e; color:white; padding:5px 10px; border-radius:20px;">💳</span>
+        {% else %}
+            <span style="background:#ef4444; color:white; padding:5px 10px; border-radius:20px;">❌</span>
+        {% endif %}
+    </td>
+
+    <!-- ENTREGA -->
+    <td>
+        {% set ruta = (p.estado_ruta or 'pendiente') | lower %}
+        {% if ruta == 'pendiente' %}
+            <span style="background:#e5e7eb; padding:5px 10px; border-radius:20px;">📋</span>
+        {% elif ruta == 'en_despacho' %}
+            <span style="background:#3b82f6; color:white; padding:5px 10px; border-radius:20px;">📦</span>
+        {% elif ruta == 'en_camino' %}
+            <span style="background:#f97316; color:white; padding:5px 10px; border-radius:20px;">🚚</span>
+        {% elif ruta == 'entregado' %}
+            <span style="background:#22c55e; color:white; padding:5px 10px; border-radius:20px;">✅</span>
+        {% endif %}
+    </td>
+
+    <!-- REPARTIDOR -->
+<td>
+    <form action="/asignar_repartidor" method="post" style="display:flex; gap:5px; justify-content:center;">
+        
+        <input type="hidden" name="id_venta" value="{{ p.id_ventas }}">
+
+        <select name="repartidor" style="padding:5px;">
+            <option value="">Seleccionar</option>
+            {% for r in repartidores %}
+                <option value="{{ r.id_repartidor }}"
+                    {% if p.id_repartidor == r.id_repartidor %} selected {% endif %}>
+                    {{ r.nombre }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" style="background:#2563eb; color:white; border:none; padding:5px 10px; border-radius:5px;">
+            ✔
+        </button>
+
+    </form>
+</td>
+
+    <!-- FECHA -->
+    <td>
+        {{ p.fecha_entrega or '' }}
+    </td>
+
+    <!-- VER DETALLE -->
+    <td>
+        <button class="btn-ver" onclick="verDetalle(
+            '{{ p.id_ventas }}',
+            '{{ p.nombre }}',
+            '{{ p.tipo }}',
+            '{{ p.peso }}',
+            '{{ p.total }}',
+            '{{ p.direccion }}',
+            '{{ p.fecha_entrega }}',
+            '{{ p.repartidor_nombre }}'
+        )">👁</button>
+    </td>
+
+    <!-- CONFIRMAR -->
+    <td>
+        {% if not p.repartidor_nombre %}
+            <button class="btn-disabled" disabled>Asignar</button>
+        {% else %}
+            <button class="btn-confirmar" onclick="confirmarDespacho('{{ p.id_ventas }}')">
+                ✅ Confirmar
+            </button>
+        {% endif %}
+    </td>
+
+</tr>
+{% endfor %}
+</tbody>
+
+</table>
+
+<!-- 🧠 SCRIPT -->
+<script>
+
+function confirmarDespacho(id){
+
+    let confirmar = confirm("¿Estás seguro de finalizar este pedido?\n\nSe enviará al historial.");
+
+    if(confirmar){
+        window.location.href = "/finalizar/" + id;
+    }
+
+}
+
+function verDetalle(id, nombre, tipo, peso, total, direccion, fecha, repartidor){
+
+    alert(
+        "📦 DETALLE DEL PEDIDO\n\n" +
+        "ID: " + id + "\n" +
+        "Cliente: " + nombre + "\n" +
+        "Producto: " + tipo + " (" + peso + " lb)\n" +
+        "Total: Q" + total + "\n" +
+        "Dirección: " + direccion + "\n" +
+        "Fecha: " + fecha + "\n" +
+        "Repartidor: " + (repartidor || "Sin asignar")
+    );
+
+}
+
+</script>
+
+</body>
+</html>

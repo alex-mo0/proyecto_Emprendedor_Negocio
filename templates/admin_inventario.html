@@ -1,19 +1,44 @@
-<h2>📦 Pedidos</h2>
+<h2>Cilindros Llenos</h2>
 
-<table>
+<table border="1">
 <tr>
-    <th>Cliente</th>
-    <th>Producto</th>
-    <th>Total</th>
-    <th>Estado</th>
+    <th>ID</th>
+    <th>Tipo</th>
+    <th>Peso</th>
+    <th>Precio</th>
+    <th>Stock</th>
 </tr>
 
-{% for p in pedidos %}
+{% for p in productos %}
 <tr>
-    <td>{{ p.nombre }}</td>
+    <td>{{ p.id_cilindro }}</td>
     <td>{{ p.tipo }}</td>
-    <td>Q{{ p.total }}</td>
-    <td>{{ p.estado }}</td>
+    <td>{{ p.peso }}</td>
+    <td>Q{{ p.precio }}</td>
+    <td>{{ p.stock }}</td>
+</tr>
+{% endfor %}
+</table>
+
+
+<br><br>
+
+<h2>Cilindros Vacíos</h2>
+
+<table border="1">
+<tr>
+    <th>ID</th>
+    <th>Tipo</th>
+    <th>Peso</th>
+    <th>Cantidad</th>
+</tr>
+
+{% for v in vacios %}
+<tr>
+    <td>{{ v.id_vacio }}</td>
+    <td>{{ v.tipo }}</td>
+    <td>{{ v.peso }}</td>
+    <td>{{ v.cantidad }}</td>
 </tr>
 {% endfor %}
 </table>

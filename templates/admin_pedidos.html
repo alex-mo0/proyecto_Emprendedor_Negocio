@@ -200,13 +200,10 @@ Volver a Inicio
 <script>
 
 function confirmarDespacho(id){
-
-    let confirmar = confirm("¿Estás seguro de finalizar este pedido?\n\nSe enviará al historial.");
-
+    let confirmar = confirm("¿Enviar pedido al repartidor?");
     if(confirmar){
-        window.location.href = "/finalizar/" + id;
+        window.location.href = "/enviar_ruta/" + id;
     }
-
 }
 
 function verDetalle(id, nombre, tipo, peso, total, direccion, fecha, repartidor){

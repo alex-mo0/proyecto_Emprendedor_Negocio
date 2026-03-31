@@ -148,6 +148,16 @@ def login():
             cursor.close()
             conn.close()
             return redirect(url_for('admin'))
+        #repartidor
+        cursor.execute("SELECT * FROM repartidores WHERE correo=%s AND password=%s", (correo, password))    
+        repartidor = cursor.fetchone()
+        if repartidor:
+            session['usuario'] = repartidor['nombre']
+            session['id_repartidor'] = repartidor['id_repartidor']
+            session['rol'] = 'repartidor'
+            cursor.close()
+            conn.close()
+            return redirect(url_for('repartidor'))
 
         cursor.close()
         conn.close()
@@ -225,6 +235,7 @@ def comprar_gas():
         id_cilindro = request.form['id_cilindro']
         cantidad = int(request.form['cantidad'])
         direccion = request.form['direccion']
+        observacion = request.form.get('observacion', '')
         fecha_entrega = request.form.get('fecha_entrega')
         hora_entrega = request.form.get('hora_entrega')
 
@@ -240,6 +251,7 @@ def comprar_gas():
             cilindro=cilindro,
             cantidad=cantidad,
             direccion=direccion,
+            observacion=observacion,
             total=total,
             fecha_entrega=fecha_entrega,
             hora_entrega=hora_entrega
@@ -264,6 +276,7 @@ def procesar_pago():
     cantidad = int(request.form['cantidad'])
     total = float(request.form['total'])
     direccion = request.form['direccion']
+    observacion = request.form.get('observacion', '')
     metodo_pago = request.form['metodo_pago']
 
     fecha_entrega = request.form.get('fecha_entrega')
@@ -281,9 +294,9 @@ def procesar_pago():
 
     cursor.execute("""
         INSERT INTO ventas_gas_nueva
-        (id_usuario,id_cilindro,cantidad,total,direccion,estado,fecha_entrega,hora_entrega)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
-    """, (id_usuario, id_cilindro, cantidad, total, direccion, estado, fecha_entrega, hora_entrega))
+        (id_usuario,id_cilindro,cantidad,total,direccion,observacion,estado,fecha_entrega,hora_entrega)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+    """, (id_usuario, id_cilindro, cantidad, total, direccion, observacion, estado, fecha_entrega, hora_entrega))
 
     cursor.execute("UPDATE cilindros SET stock = stock - %s WHERE id_cilindro = %s",
                    (cantidad, id_cilindro))
@@ -436,11 +449,12 @@ def admin_inventario():
 
     cursor.execute("SELECT * FROM cilindros")
     productos = cursor.fetchall()
-
+    cursor.execute("SELECT * FROM cilindros_vacios")
+    vacios = cursor.fetchall()
     cursor.close()
     conn.close()
 
-    return render_template('admin_inventario.html', productos=productos)
+    return render_template('admin_inventario.html', productos=productos, vacios=vacios)
 
 # ==========================
 # ADMIN USUARIOS
@@ -508,7 +522,7 @@ def asignar_repartidor():
     cursor.execute("""
         UPDATE ventas_gas_nueva
         SET id_repartidor = %s,
-            estado_ruta = 'en_despacho'
+            estado_ruta = 'asignado'
         WHERE id_ventas = %s
     """, (id_repartidor, id_venta))
 
@@ -671,7 +685,105 @@ def descargar_factura(id):
     )
 
     return send_file(pdf_path, as_attachment=True)
+
+#repartidor 
+@app.route('/repartidor')
+def repartidor():
+
+    if session.get('rol') != 'repartidor':
+        return "❌ No autorizado"
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT v.*, u.nombre,v.observacion as pedido_observacion, v.direccion, u.telefono, c.tipo
+        FROM ventas_gas_nueva v
+        JOIN usuarios u ON v.id_usuario = u.id_usuario
+        JOIN cilindros c ON v.id_cilindro = c.id_cilindro
+        WHERE v.id_repartidor = %s
+        AND v.estado_ruta != 'entregado'
+    """, (session['id_repartidor'],))
+
+    pedidos = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('repartidor.html', pedidos=pedidos)
 # ==========================
+#inicio de ruta
+@app.route('/iniciar_ruta/<int:id>')
+def iniciar_ruta(id):
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE ventas_gas_nueva
+        SET estado_ruta = 'en_camino'
+        WHERE id_ventas = %s
+    """, (id,))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect('/repartidor')
+#entregar parte de repartidor
+@app.route('/entregar/<int:id>')
+def entregar(id):
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # ver estado actual
+    cursor.execute("SELECT estado FROM ventas_gas_nueva WHERE id_ventas = %s", (id,))
+    venta = cursor.fetchone()
+
+    if venta['estado'] == 'Pendiente':
+        # pago en efectivo
+        cursor.execute("""
+            UPDATE ventas_gas_nueva
+            SET estado = 'Pagado',
+                estado_ruta = 'entregado'
+            WHERE id_ventas = %s
+        """, (id,))
+    else:
+        # ya estaba pagado (tarjeta)
+        cursor.execute("""
+            UPDATE ventas_gas_nueva
+            SET estado_ruta = 'entregado'
+            WHERE id_ventas = %s
+        """, (id,))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect('/repartidor')
+#enviar a ruta
+@app.route('/enviar_ruta/<int:id>')
+def enviar_ruta(id):
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        UPDATE ventas_gas_nueva
+        SET estado_ruta = 'en_camino'
+        WHERE id_ventas = %s
+    """, (id,))
+
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return redirect('/admin_pedidos')
+
 # RUN
 # ==========================
 if __name__ == '__main__':

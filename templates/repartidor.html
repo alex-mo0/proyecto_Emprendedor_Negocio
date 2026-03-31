@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel Repartidor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- BOOTSTRAP -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f5f6fa;
+        }
+        .card-header {
+            font-weight: bold;
+        }
+        .btn {
+            border-radius: 10px;
+        }
+        .table td, .table th {
+            vertical-align: middle;
+        }
+    </style>
+</head>
+
+<body class="container mt-4">
+
+    <h2 class="mb-4">🚚 Panel del Repartidor</h2>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover shadow-sm">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>Cliente</th>
+                    <th>Teléfono</th>
+                    <th>Dirección</th>
+                    <th>Producto</th>
+                    <th>Total</th>
+                    <th>Pago</th>
+                    <th>Ruta</th>
+                    <th>Observación</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+            {% for pedido in pedidos %}
+            <tr>
+
+                <td>{{ pedido.nombre }}</td>
+
+                <td>{{ pedido.telefono }}</td>
+
+                <td>{{ pedido.direccion }}</td>
+
+                <td>{{ pedido.tipo }}</td>
+
+                <td><strong>Q{{ pedido.total }}</strong></td>
+
+                <!-- TIPO DE PAGO -->
+                <td>
+                    {% if pedido.estado == 'Pendiente' %}
+                        <span class="badge bg-warning text-dark">Efectivo</span>
+                    {% else %}
+                        <span class="badge bg-success">Tarjeta</span>
+                    {% endif %}
+                </td>
+
+                <!-- ESTADO RUTA -->
+                <td>
+                    {% if pedido.estado_ruta == 'asignado' %}
+                        <span class="badge bg-secondary">Asignado</span>
+                    {% elif pedido.estado_ruta == 'en_camino' %}
+                        <span class="badge bg-warning text-dark">En camino</span>
+                    {% elif pedido.estado_ruta == 'entregado' %}
+                        <span class="badge bg-success">Entregado</span>
+                    {% else %}
+                        <span class="badge bg-light text-dark">-</span>
+                    {% endif %}
+                </td>
+
+                <!-- OBSERVACION -->
+                <td>
+                    {% if pedido.observacion %}
+                        📝 {{ pedido.observacion }}
+                    {% else %}
+                        <span class="text-muted">Sin nota</span>
+                    {% endif %}
+                </td>
+
+                <!-- ACCIONES -->
+                <td style="min-width: 180px;">
+
+                    <!-- GOOGLE MAPS -->
+                    <a href="https://www.google.com/maps/search/?api=1&query={{ pedido.direccion | urlencode }}"
+                       target="_blank"
+                       class="btn btn-dark btn-sm mb-1 w-100">
+                         Google Maps
+                    </a>
+
+                    <!-- WAZE -->
+                    <a href="https://waze.com/ul?q={{ pedido.direccion | urlencode }}"
+                       target="_blank"
+                       class="btn btn-info btn-sm mb-1 w-100">
+                         Waze
+                    </a>
+
+                    <!-- INICIAR RUTA -->
+                    {% if pedido.estado_ruta == 'asignado' %}
+                        <a href="/iniciar_ruta/{{ pedido.id_ventas }}"
+                           class="btn btn-primary btn-sm mb-1 w-100">
+                            ▶️ Iniciar ruta
+                        </a>
+                    {% endif %}
+
+                    <!-- ENTREGAR -->
+                    {% if pedido.estado_ruta == 'en_camino' %}
+                        <a href="/entregar/{{ pedido.id_ventas }}"
+                           onclick="return confirm('¿Confirmar entrega del pedido?')"
+                           class="btn btn-success btn-sm mb-1 w-100">
+                            ✅ Entregar
+                        </a>
+                    {% endif %}
+
+                </td>
+
+            </tr>
+            {% endfor %}
+
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

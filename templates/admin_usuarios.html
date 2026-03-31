@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Usuarios</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+
+        .contenedor {
+            width: 90%;
+            margin: auto;
+            margin-top: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+
+        th {
+            background-color: #ff6a00;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .btn {
+            padding: 5px 10px;
+            border: none;
+            cursor: pointer;
+            color: white;
+        }
+
+        .editar {
+            background-color: #28a745;
+        }
+
+        .eliminar {
+            background-color: #dc3545;
+        }
+
+        .ver {
+            background-color: #007bff;
+        }
+    </style>
+</head>
+<body>
+
+<div class="contenedor">
+
+<h2>👤 Administración de Usuarios</h2>
+
+<table>
+<tr>
+    <th>ID</th>
+    <th>Nombre</th>
+    <th>Teléfono</th>
+    <th>Dirección</th>
+    <th>Correo</th>
+    <th>Fecha Registro</th>
+    <th>Acciones</th>
+</tr>
+
+{% for u in usuarios %}
+<tr>
+    <td>{{ u.id_usuario }}</td>
+    <td>{{ u.nombre }}</td>
+    <td>{{ u.telefono }}</td>
+    <td>{{ u.direccion }}</td>
+    <td>{{ u.correo }}</td>
+    <td>{{ u.fecha_registro }}</td>
+
+    <td>
+        <a href="/ver_usuario/{{ u.id_usuario }}">
+            <button class="btn ver">Ver</button>
+        </a>
+
+        <a href="/editar_usuario/{{ u.id_usuario }}">
+            <button class="btn editar">Editar</button>
+        </a>
+
+        <a href="/eliminar_usuario/{{ u.id_usuario }}" onclick="return confirm('¿Eliminar usuario?')">
+            <button class="btn eliminar">Eliminar</button>
+        </a>
+    </td>
+</tr>
+{% endfor %}
+
+</table>
+
+<br>
+<a href="/admin"> Volver al panel</a>
+
+</div>
+
+</body>
+</html>

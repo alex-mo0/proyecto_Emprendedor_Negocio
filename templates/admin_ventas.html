@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Ventas</title>
+
+<style>
+body{
+    font-family: Arial;
+    background:#f4f4f4;
+    text-align:center;
+}
+
+.contenedor{
+    width:90%;
+    margin:auto;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+}
+
+th, td{
+    padding:10px;
+    border:1px solid #ccc;
+}
+
+th{
+    background:#2563eb;
+    color:white;
+}
+
+input{
+    padding:8px;
+    margin:5px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="contenedor">
+
+<h2>Historial de Ventas</h2>
+
+<!-- 🔎 FILTROS -->
+<form method="GET">
+
+Buscar por fecha:
+<input type="date" name="fecha">
+
+Buscar por factura:
+<input type="text" name="factura" placeholder="Ej: FAC-12345">
+
+<button type="submit">Buscar</button>
+
+</form>
+
+<br>
+
+<table>
+<tr>
+    <th>Factura</th>
+    <th>Cliente</th>
+    <th>Total</th>
+    <th>Fecha</th>
+    <th>Estado</th>
+</tr>
+
+{% for v in ventas %}
+<tr>
+    <td>{{ v.numero_factura }}</td>
+    <td>{{ v.nombre }}</td>
+    <td>Q{{ v.total }}</td>
+    <td>{{ v.fecha_entrega }}</td>
+    <td>{{ v.estado }}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+<br>
+<a href="/admin">Volver</a>
+
+</div>
+
+</body>
+</html>

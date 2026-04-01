@@ -41,7 +41,7 @@ def generar_factura_pdf(nombre, telefono, producto, cantidad, total, direccion):
     if not os.path.exists("facturas"):
         os.makedirs("facturas")
 
-    numero_factura = random.randint(10000, 99999)
+    numero_factura = "FAC-" + str(random.randint(10000,99999))
     fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
 
     pdf_path = f"facturas/factura_{numero_factura}.pdf"
@@ -287,6 +287,7 @@ def procesar_pago():
         fecha_entrega = ahora.strftime("%Y-%m-%d")
         hora_entrega = ahora.strftime("%H:%M:%S")
 
+    numero_factura = "FAC-" + str(random.randint(10000, 99999))
     estado = "Pagado" if metodo_pago == "tarjeta" else "Pendiente"
 
     conn = get_db_connection()
@@ -294,9 +295,9 @@ def procesar_pago():
 
     cursor.execute("""
         INSERT INTO ventas_gas_nueva
-        (id_usuario,id_cilindro,cantidad,total,direccion,observacion,estado,fecha_entrega,hora_entrega)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
-    """, (id_usuario, id_cilindro, cantidad, total, direccion, observacion, estado, fecha_entrega, hora_entrega))
+        (id_usuario,id_cilindro,cantidad,total,direccion,observacion,estado,fecha_entrega,hora_entrega,numero_factura)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+    """, (id_usuario, id_cilindro, cantidad, total, direccion, observacion, estado, fecha_entrega, hora_entrega,numero_factura))
 
     cursor.execute("UPDATE cilindros SET stock = stock - %s WHERE id_cilindro = %s",
                    (cantidad, id_cilindro))
@@ -306,7 +307,7 @@ def procesar_pago():
     cursor.close()
     conn.close()
 
-    return render_template('mensaje.html', mensaje="✅ Pedido realizado")
+    return render_template('mensaje.html', mensaje="✅ Pedido realizado", factura=numero_factura)
 
 # ==========================
 # MIS PEDIDOS
@@ -783,6 +784,47 @@ def enviar_ruta(id):
     conn.close()
 
     return redirect('/admin_pedidos')
+
+#ventas por fecha 
+@app.route('/admin_ventas')
+def admin_ventas():
+
+    if session.get('rol') != 'admin':
+        return "❌ No autorizado"
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # filtros
+    fecha = request.args.get('fecha')
+    factura = request.args.get('factura')
+
+    query = """
+    SELECT v.*, u.nombre
+    FROM ventas_gas_nueva v
+    JOIN usuarios u ON v.id_usuario = u.id_usuario
+    WHERE 1=1
+    """
+
+    valores = []
+
+    if fecha:
+        query += " AND DATE(v.fecha_entrega) = %s"
+        valores.append(fecha)
+
+    if factura:
+        query += " AND v.numero_factura = %s"
+        valores.append(factura)
+
+    query += " ORDER BY v.fecha_entrega DESC"
+
+    cursor.execute(query, valores)
+    ventas = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template('admin_ventas.html', ventas=ventas)
 
 # RUN
 # ==========================
